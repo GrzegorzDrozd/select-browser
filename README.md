@@ -10,6 +10,10 @@ browser or a routing rule means editing a file, not the script.
 
 ![The picker dialog listing configured browsers](docs/image.png)
 
+If you have used [BrowserSelector](https://apps.microsoft.com/detail/9p7fsldkdxh3)
+on Windows, this is essentially the same idea for Linux: intercept link clicks,
+route known URLs to a chosen browser, and ask for the rest.
+
 ## How it works
 
 When a link is opened, the script checks each browser's `patterns.txt` for a
