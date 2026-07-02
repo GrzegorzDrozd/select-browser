@@ -1,0 +1,3 @@
+# URL substrings that auto-open in firefox. One per line.
+# '#' comments and blank lines are ignored. Matching is a plain substring
+# match against the full URL.
