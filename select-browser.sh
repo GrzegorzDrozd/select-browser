@@ -40,8 +40,17 @@ launch_browser() {
   cmdline="$(read_config_lines "$dir/command.txt" | head -n1)"
   [[ -z "$cmdline" ]] && return 1
 
+  # Split the command using normal shell quoting, so a path with spaces works
+  # when quoted, e.g.  "/opt/My Browser/run" --flag %u
+  # command.txt is your own trusted config; the untrusted URL is never part of
+  # this string, so quote-aware parsing here doesn't reopen the injection hole.
+  # Globbing is disabled during the split so a stray '*' isn't expanded.
   local -a tokens args
-  IFS=' ' read -ra tokens <<< "$cmdline"
+  local reset_glob=0
+  [[ $- == *f* ]] || reset_glob=1
+  set -f
+  eval "tokens=($cmdline)"
+  [[ $reset_glob -eq 1 ]] && set +f
   local tok url_used=0
   for tok in "${tokens[@]}"; do
     if [[ "$tok" == "%u" ]]; then
@@ -55,12 +64,26 @@ launch_browser() {
   "${args[@]}" &
 }
 
-# --- Discover browsers (folders containing command.txt), sorted by name ---
+# The label shown in the dialog: strip an optional leading number and one
+# separator so a folder like "1-firefox" or "10 brave" sorts by the number but
+# displays as "firefox" / "brave".
+display_name() {
+  local n="$1"
+  if [[ "$n" =~ ^[0-9]+[-_.\ ]?(.+)$ ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+  else
+    printf '%s' "$n"
+  fi
+}
+
+# --- Discover browsers (folders containing command.txt) ---
+# Sorted with -V (version sort) so numeric prefixes order naturally: a folder
+# named "10-brave" comes after "2-chromium", not before it.
 BROWSER_DIRS=()
 if [[ -d "$BROWSERS_DIR" ]]; then
   while IFS= read -r dir; do
     [[ -f "$dir/command.txt" ]] && BROWSER_DIRS+=("$dir")
-  done < <(find "$BROWSERS_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
+  done < <(find "$BROWSERS_DIR" -mindepth 1 -maxdepth 1 -type d | sort -V)
 fi
 
 # --- Automatic domain match: first browser with a matching pattern wins ---
@@ -77,7 +100,7 @@ done
 # Browser rows first (one pre-selected), then the always-present defaults.
 ZENITY_ARGS=()
 for dir in "${BROWSER_DIRS[@]}"; do
-  name="$(basename "$dir")"
+  name="$(display_name "$(basename "$dir")")"
   if [[ -f "$dir/default" ]]; then
     ZENITY_ARGS+=("TRUE" "$name")
   else
@@ -126,6 +149,7 @@ if [ $EXIT_STATUS -eq 0 ] && [ -n "$BROWSER" ]; then
     # Copy the link to the clipboard first, so it isn't lost while editing.
     if command -v xclip &> /dev/null; then
       echo -n "$LINK" | xclip -selection clipboard
+      zenity --info --text="URL copied to clipboard!" --timeout=1
     fi
     # Open the browsers/ folder so configs can be edited or new ones added.
     if command -v xdg-open &> /dev/null; then
@@ -134,8 +158,14 @@ if [ $EXIT_STATUS -eq 0 ] && [ -n "$BROWSER" ]; then
       zenity --error --text="No file manager found. Edit configs here:\n$BROWSERS_DIR"
     fi
   else
-    # A browser name: launch it (folder name matches an entry we listed).
-    launch_browser "$BROWSERS_DIR/$BROWSER" "$LINK"
+    # A browser label: find the folder whose display name matches and launch it.
+    # (The folder may carry a numeric prefix that the label doesn't.)
+    for dir in "${BROWSER_DIRS[@]}"; do
+      if [ "$(display_name "$(basename "$dir")")" == "$BROWSER" ]; then
+        launch_browser "$dir" "$LINK"
+        break
+      fi
+    done
   fi
 fi
 

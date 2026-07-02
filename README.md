@@ -120,7 +120,14 @@ The command that launches the browser, for example `firefox` or
 URL. If there is no `%u`, the URL is appended as the last argument, so a plain
 `firefox` works fine.
 
-The URL is always passed as a separate argument, never pasted into a shell
+Arguments are split on spaces, with normal shell quoting respected. Wrap an
+executable path or a value that contains spaces in double quotes:
+
+```
+"/opt/My Browser/run" --profile "work stuff" %u
+```
+
+The URL is always passed as a separate argument, never pasted into the command
 string, so a hostile link cannot inject commands.
 
 ### patterns.txt
@@ -136,6 +143,14 @@ manually.
 
 An empty marker file. If it exists, that browser is pre-selected in the dialog.
 Mark only one browser this way. If none are marked, the first one is selected.
+
+### Ordering
+
+Browsers are listed alphabetically by folder name. To force an order, prefix the
+folder name with a number and a separator, for example `1-firefox`, `2-chromium`,
+`10-brave`. The number controls the position (and the auto-match priority) but
+is stripped from the label, so the dialog still shows `firefox`, `chromium` and
+`brave`. Numbers sort naturally, so `10` comes after `2`.
 
 ### Adding a browser
 
