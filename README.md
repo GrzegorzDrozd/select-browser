@@ -8,6 +8,8 @@ you assigned them.
 Everything is configured with plain text files under `browsers/`. Adding a
 browser or a routing rule means editing a file, not the script.
 
+![The picker dialog listing configured browsers](docs/image.png)
+
 ## How it works
 
 When a link is opened, the script checks each browser's `patterns.txt` for a
