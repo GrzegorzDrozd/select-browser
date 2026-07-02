@@ -17,13 +17,21 @@ substring that appears in the URL. The first match wins, and that browser opens
 the link with no dialog. If nothing matches, a zenity dialog lists every
 configured browser plus "Copy to Clipboard" and "Edit browser configs...".
 
+Picking "Edit browser configs..." also copies the link to the clipboard, so the
+URL you clicked is not lost while you edit.
+
 ## Requirements
 
 - `bash`
-- `zenity` for the dialog
+- `zenity` for the dialog (required)
 - `xdg-utils` for `xdg-open` (the config editor button) and `xdg-settings`
-- `xclip` (optional, only needed for the Copy to Clipboard action)
+  (recommended)
+- `xclip` for the Copy to Clipboard action and the clipboard copy on edit
+  (recommended)
 - The browsers you want to use, installed and on your `PATH`
+
+Only `zenity` is strictly required. Without the recommended tools the dialog
+still works, but the clipboard and config-editor features are skipped.
 
 On Debian or Ubuntu:
 
@@ -41,7 +49,9 @@ cd select-browser
 ./install.sh
 ```
 
-The installer does three things:
+The installer checks dependencies first. It stops with a clear message if
+`zenity` is missing, and warns about missing recommended packages before
+continuing. Then it does three things:
 
 - makes `select-browser.sh` executable
 - symlinks it to `~/.local/bin/select-browser`
@@ -133,7 +143,8 @@ echo 'flatpak run com.brave.Browser' > browsers/brave/command.txt
 ```
 
 The "Edit browser configs..." entry in the dialog opens the `browsers/` folder
-in your file manager, which is the quick way to tweak all of this later.
+in your file manager, which is the quick way to tweak all of this later. It also
+copies the current link to the clipboard so you can still reach it afterwards.
 
 ## Uninstall
 

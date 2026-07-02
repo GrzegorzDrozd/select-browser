@@ -123,6 +123,10 @@ if [ $EXIT_STATUS -eq 0 ] && [ -n "$BROWSER" ]; then
              --text="Error: 'xclip' is not installed. Please install it to use the copy feature.\n(e.g., sudo apt install xclip)"
     fi
   elif [ "$BROWSER" == "Edit browser configs…" ]; then
+    # Copy the link to the clipboard first, so it isn't lost while editing.
+    if command -v xclip &> /dev/null; then
+      echo -n "$LINK" | xclip -selection clipboard
+    fi
     # Open the browsers/ folder so configs can be edited or new ones added.
     if command -v xdg-open &> /dev/null; then
       xdg-open "$BROWSERS_DIR" &

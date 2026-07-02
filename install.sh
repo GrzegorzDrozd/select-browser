@@ -18,6 +18,37 @@ BIN_LINK="$BIN_DIR/select-browser"
 DESKTOP_DIR="$HOME/.local/share/applications"
 DESKTOP_FILE="$DESKTOP_DIR/select-browser.desktop"
 
+# 0. Check dependencies. zenity is required; the rest are recommended.
+missing_required=()
+command -v zenity &> /dev/null || missing_required+=("zenity")
+
+if [ ${#missing_required[@]} -gt 0 ]; then
+  echo "Error: missing required dependency: ${missing_required[*]}" >&2
+  echo "select-browser cannot show its dialog without it." >&2
+  echo "Install it first, for example:" >&2
+  echo "  sudo apt install ${missing_required[*]}" >&2
+  exit 1
+fi
+
+# Recommended tools (command -> apt package). Missing ones only degrade
+# features, so warn instead of aborting.
+declare -A recommended=(
+  [xdg-open]="xdg-utils"      # 'Edit browser configs' button, set-as-default
+  [xclip]="xclip"             # 'Copy to Clipboard' action
+)
+missing_recommended=()
+for cmd in "${!recommended[@]}"; do
+  command -v "$cmd" &> /dev/null || missing_recommended+=("${recommended[$cmd]}")
+done
+if [ ${#missing_recommended[@]} -gt 0 ]; then
+  # Deduplicate package names.
+  readarray -t pkgs < <(printf '%s\n' "${missing_recommended[@]}" | sort -u)
+  echo "Warning: some optional features need packages that aren't installed:"
+  echo "  ${pkgs[*]}"
+  echo "  Install them for full functionality: sudo apt install ${pkgs[*]}"
+  echo
+fi
+
 # 1. Make the script executable.
 chmod +x "$SCRIPT"
 
